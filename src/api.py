@@ -12,7 +12,6 @@ app = Flask(__name__)
 driver = None
 last_driver = 0
 last_response = 0
-last_api_request = time.time()
 
 textbox = None
 
@@ -38,10 +37,7 @@ config = {
 
 @app.route("/models", methods=["GET"])
 def model():
-    global driver, last_api_request
-    last_api_request = time.time()
-    if driver is None:
-        run_services(restart_only=True)
+    global driver
     if not driver:
         return jsonify({}), 503
     
@@ -58,10 +54,7 @@ def model():
 @app.route("/chat/completions", methods=["POST"])
 def bot_response():
     try:
-        global driver, config, last_api_request
-        last_api_request = time.time()
-        if driver is None:
-            run_services(restart_only=True)
+        global driver, config
 
         data = request.get_json()
         if not data:
@@ -212,41 +205,35 @@ def deepseek_response(character_info, streaming, deepseek_deepthink, deepseek_se
 # Selenium actions
 # =============================================================================================================================
 
-def run_services(restart_only=False):
+def run_services():
     try:
         global driver, config, last_driver, last_response
+        
         last_response = 0
         last_driver += 1
+
         close_selenium()
-        headless = config.get("headless", True)
-        grid = config.get("selenium_grid", {})
-        grid_host = grid.get("host") or None
-        grid_port = grid.get("port") or None
-        driver = selenium.initialize_webdriver(
-            config["browser"],
-            "https://chat.deepseek.com/sign_in",
-            headless=headless,
-            grid_host=grid_host,
-            grid_port=grid_port
-        )
+        driver = selenium.initialize_webdriver(config["browser"], "https://chat.deepseek.com/sign_in")
+        
         if driver:
             threading.Thread(target=monitor_driver, daemon=True).start()
+            
             if config["models"]["deepseek"]["auto_login"]:
                 deepseek.login(driver, config["models"]["deepseek"]["email"], config["models"]["deepseek"]["password"])
-            if not restart_only:
-                clear_messages()
-                show_message("[color:red]API IS NOW ACTIVE!")
-                show_message("[color:cyan]WELCOME TO INTENSE RP API V2.0")
-                show_message("[color:yellow]URL 1: [color:white]http://127.0.0.1:5000/")
-                if config["show_ip"]:
-                    local_ip = socket.gethostbyname(socket.gethostname())
-                    show_message(f"[color:yellow]URL 2: [color:white]http://{local_ip}:5000/")
-                threading.Thread(target=idle_monitor, daemon=True).start()
-                serve(app, host="0.0.0.0", port=5000)
+            
+            clear_messages()
+            show_message("[color:red]API IS NOW ACTIVE!")
+            show_message("[color:cyan]WELCOME TO INTENSE RP API V2.0")
+            show_message("[color:yellow]URL 1: [color:white]http://127.0.0.1:5000/")
+            
+            if config["show_ip"]:
+                local_ip = socket.gethostbyname(socket.gethostname())
+                show_message(f"[color:yellow]URL 2: [color:white]http://{local_ip}:5000/")
+            
+            serve(app, host="0.0.0.0", port=5000)
         else:
-            if not restart_only:
-                clear_messages()
-                show_message("[color:red]Selenium failed to start.")
+            clear_messages()
+            show_message("[color:red]Selenium failed to start.")
     except Exception as e:
         print(f"Error starting Selenium: {e}")
 
@@ -277,14 +264,6 @@ def close_selenium():
             driver = None
     except Exception:
         pass
-
-def idle_monitor():
-    global driver, last_api_request
-    while True:
-        if driver and (time.time() - last_api_request > 1800):
-            show_message("[color:red]Нет активности 30 минут. Останавливаю Selenium.")
-            close_selenium()
-        time.sleep(60)
 
 # =============================================================================================================================
 # Textbox actions
