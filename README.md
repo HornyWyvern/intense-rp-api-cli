@@ -14,6 +14,26 @@ If you're having trouble getting past **Cloudflare**, it's highly recommended to
 ### 🖥️ Windows Version
 - ✅ No additional installations are required.
 
+## 🖥️ Console mode and CLI parameters
+
+To run without GUI use:
+
+```
+python src/main.pyw --cli [--headless] [--browser BROWSER] [--email EMAIL] [--password PASSWORD] [--config CONFIG_PATH] [--grid-host HOST] [--grid-port PORT]
+```
+
+- `--cli` — run API only, without GUI
+- `--headless` — run browser in headless mode
+- `--browser` — select browser (Chrome, Firefox, Edge, Safari)
+- `--email` and `--password` — pass DeepSeek credentials
+- `--config` — path to config (JSON)
+- `--grid-host` and `--grid-port` — address and port of external Selenium Grid
+
+Example:
+```
+python src/main.pyw --cli --headless --browser Chrome --email user@mail.com --password 1234 --grid-host 192.168.1.10 --grid-port 4444
+```
+
 ## ⚙️ How to Use
 ### 🚀 Intense RP API
 1. 📥 Download the source code or the distributable version for Windows.
